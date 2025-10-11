@@ -72,48 +72,28 @@ def node_to_md(node, list_stack=None):
     if tag == "table-block":
         # custom handling for table-block if needed
         return "".join(node_to_md(c, list_stack) for c in node.children) + "\n\n"
-
+    
     if tag == "table":
         out = []
-        rows = node.find_all("tr")
+        rows = node.find_all('tr')
         if not rows:
             print("Warning: table with no rows")
             return ""
-
-        column_numbers = len(rows[0].find_all("td"))
+        
+        column_numbers = len(rows[0].find_all('td'))
 
         if column_numbers == 0:
             print("Warning: table with no columns")
             return ""
-
+        
         for r in rows:
-            cols = r.find_all(["td"])
+            cols = r.find_all(['td'])
             if len(cols) != column_numbers:
                 print("Warning: inconsistent number of columns in table")
                 return ""
-            out.append(
-                "| "
-                + " | ".join(node_to_md(c, list_stack).strip() for c in cols)
-                + " |\n"
-            )
+            out.append("| " + " | ".join(node_to_md(c, list_stack).strip() for c in cols) + " |\n")
         out.insert(1, "| " + " | ".join(["---"] * column_numbers) + " |\n")
         return "".join(out) + "\n"
-
-        out = ""
-        for i, row in enumerate(rows):
-            out += node_to_md(row, list_stack)
-            if i == 0 and row.name == "tr":
-                # after header row, add separator
-                cols = [
-                    c for c in row.children if isinstance(c, Tag) and c.name == "th"
-                ]
-                if not cols:
-                    cols = [
-                        c for c in row.children if isinstance(c, Tag) and c.name == "td"
-                    ]
-                if cols:
-                    out += "| " + " | ".join(["---"] * len(cols)) + " |\n"
-        return out + "\n"
 
     # fallback: render children
     return "".join(node_to_md(c, list_stack) for c in node.children)
