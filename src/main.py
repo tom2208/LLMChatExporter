@@ -30,17 +30,6 @@ def node_to_md(node, list_stack=None):
     if tag in ("em", "i"):
         return "_" + "".join(node_to_md(c, list_stack) for c in node.children) + "_"
 
-    if tag == "code" and node.parent.name == "pre":
-        return ""
-    if tag == "code":
-        return "`" + "".join(node_to_md(c, list_stack) for c in node.children) + "`"
-
-    if tag == "pre":
-        # try to get language from child <code class="language-...">
-        code_tag = node.find("code")
-        code_text = code_tag.get_text() if code_tag else node.get_text()
-        return "```\n" + code_text.rstrip() + "\n```\n\n"
-
     if tag in ("h1", "h2", "h3", "h4", "h5", "h6"):
         level = int(tag[1])
         text = "".join(node_to_md(c, list_stack) for c in node.children).strip()
@@ -60,13 +49,10 @@ def node_to_md(node, list_stack=None):
         indent = "  " * (len(list_stack) - 1)
         parent = list_stack[-1] if list_stack else "ul"
         if parent == "ol":
-            # find index among siblings
-            # caller preserves order so we can approximate with placeholder number
             prefix = "1. "
         else:
             prefix = "- "
         content = "".join(node_to_md(c, list_stack) for c in node.children).strip()
-        # allow nested lists inside li; ensure inner lines are indented
         content = content.replace("\n", "\n" + indent + "  ")
         return indent + prefix + content + "\n"
 
@@ -80,16 +66,54 @@ def node_to_md(node, list_stack=None):
         src = node.get("src", "")
         return f"![{alt}]({src})"
 
-    if tag == "blockquote":
-        inner = (
-            "".join(node_to_md(c, list_stack) for c in node.children)
-            .strip()
-            .splitlines()
-        )
-        return "\n".join(["> " + line for line in inner]) + "\n\n"
-
     if tag == "hr":
         return "---\n\n"
+
+    if tag == "table-block":
+        # custom handling for table-block if needed
+        return "".join(node_to_md(c, list_stack) for c in node.children) + "\n\n"
+
+    if tag == "table":
+        out = []
+        rows = node.find_all("tr")
+        if not rows:
+            print("Warning: table with no rows")
+            return ""
+
+        column_numbers = len(rows[0].find_all("td"))
+
+        if column_numbers == 0:
+            print("Warning: table with no columns")
+            return ""
+
+        for r in rows:
+            cols = r.find_all(["td"])
+            if len(cols) != column_numbers:
+                print("Warning: inconsistent number of columns in table")
+                return ""
+            out.append(
+                "| "
+                + " | ".join(node_to_md(c, list_stack).strip() for c in cols)
+                + " |\n"
+            )
+        out.insert(1, "| " + " | ".join(["---"] * column_numbers) + " |\n")
+        return "".join(out) + "\n"
+
+        out = ""
+        for i, row in enumerate(rows):
+            out += node_to_md(row, list_stack)
+            if i == 0 and row.name == "tr":
+                # after header row, add separator
+                cols = [
+                    c for c in row.children if isinstance(c, Tag) and c.name == "th"
+                ]
+                if not cols:
+                    cols = [
+                        c for c in row.children if isinstance(c, Tag) and c.name == "td"
+                    ]
+                if cols:
+                    out += "| " + " | ".join(["---"] * len(cols)) + " |\n"
+        return out + "\n"
 
     # fallback: render children
     return "".join(node_to_md(c, list_stack) for c in node.children)
