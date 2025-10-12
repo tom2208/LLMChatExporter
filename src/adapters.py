@@ -35,10 +35,9 @@ class HTMLAdapter(ContentAdapter):
         self.start_paragraph = [(NodeType.START_PARAGRAPH, None)]
         self.end_paragraph = [(NodeType.END_PARAGRAPH, None)]
         self.hline = [(NodeType.HLINE, None)]
+        self.text = lambda text: [(NodeType.TEXT, nodes.TextAttributes(text=text))]
 
-        self.heading = lambda level: [
-            (NodeType.HEADING, nodes.HeadingAttributes(level=level))
-        ]
+        self.heading = lambda level: [(NodeType.HEADING, nodes.HeadingAttributes(level=level))]
         super().__init__()
 
     def extract_content(
@@ -88,7 +87,10 @@ class HTMLAdapter(ContentAdapter):
                 a node type and optional attributes.        
         """
         if isinstance(node, NavigableString):
-            result.extend(self.__generate_text(node))
+            if node:
+                result.extend(self.text(str(node)))
+            else:
+                print("Warning: empty text node")
 
         elif isinstance(node, Tag):
             if node.name == "br":
@@ -117,6 +119,8 @@ class HTMLAdapter(ContentAdapter):
 
             elif node.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
                 level = int(node.name[1])
+                result.extend(self.heading(level))
+                result.extend(self.text(node.get_text()))
 
             else:
                 for child in node.contents:
@@ -129,17 +133,8 @@ class HTMLAdapter(ContentAdapter):
     def __generate_break(self) -> tuple[NodeType, Optional[Attributes]]:
         return (NodeType.BREAK, None)
 
-    def __generate_text(
-        self, node: NavigableString
-    ) -> List[tuple[NodeType, Optional[Attributes]]]:
-        text = node
-        if text:
-            return [(NodeType.TEXT, nodes.TextAttributes(text=text))]
-        print("Warning: empty text node")
-        return []
 
-
-from builder import MarkdownBuilder
+from builders import MarkdownBuilder
 
 with open("/home/tom/Downloads/Google Gemini.html", "r", encoding="utf-8") as f:
     html = f.read()
