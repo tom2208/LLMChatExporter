@@ -28,7 +28,6 @@ class MarkdownBuilder(TokenBuilder):
         self.ignored_token_types = [
             NodeType.START_QUERY,
             NodeType.START_ANSWER,
-            NodeType.HEADING,
             NodeType.START_PARAGRAPH,
         ]
 
@@ -61,8 +60,33 @@ class MarkdownBuilder(TokenBuilder):
         elif token_type == NodeType.HEADING and attributes is not None:
             self.__append(self.heading(attributes.level, attributes.text))
 
+        elif token_type == NodeType.TABLE and attributes is not None:
+            self.__append(self.break_line)
+            rows = attributes.rows
+            if not rows or not all(isinstance(row, list) for row in rows):
+                print("Warning: Invalid table attributes")
+                return
+
+            for row in rows:
+                if not row or not all(isinstance(cell, str) for cell in row):
+                    print("Warning: Invalid table row")
+                    return
+
+            column_numbers = len(rows[0])
+            if column_numbers == 0:
+                print("Warning: Table with no columns")
+                return
+
+            self.__append("| " + " | ".join(rows[0]) + " |\n")
+            self.__append("| " + " | ".join(["---"] * column_numbers) + " |\n")
+
+            for r in rows[1:]:
+                self.__append("| " + " | ".join(r) + " |\n")
+            self.__append("\n")
+
         elif token_type in self.ignored_token_types:
             pass
+
         else:
             print(
                 f"Warning: Unhandled token type {token_type} with attributes {attributes}"

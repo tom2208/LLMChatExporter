@@ -123,6 +123,36 @@ class HTMLAdapter(ContentAdapter):
                 level = int(node.name[1])
                 result.extend(self.heading(level, node.get_text()))
 
+            elif node.name in ["table-block"]:
+                for child in node.contents:
+                    result.extend(self.__process_tags(child))
+
+            elif node.name in ["table"]:
+                table_rows = []
+
+                for child in node.contents:
+
+                    rows = child.find_all("tr")
+                    if not rows:
+                        print("Warning: table with no rows")
+                        return result
+
+                    column_numbers = len(rows[0].find_all("td"))
+
+                    if column_numbers == 0:
+                        print("Warning: table with no columns")
+                        return result
+
+                    for r in rows:
+                        cols = r.find_all(["td"])
+                        if len(cols) != column_numbers:
+                            print("Warning: inconsistent number of columns in table")
+                            return result
+                        texts = [c.get_text() for c in cols]
+                        table_rows.append(texts)
+
+                result.append((NodeType.TABLE, nodes.TableAttributes(rows=table_rows)))
+
             else:
                 for child in node.contents:
                     result.extend(self.__process_tags(child))
