@@ -39,6 +39,7 @@ class MarkdownBuilder(TokenBuilder):
         self.heading = lambda level, text: "#" * level + " " + text + "\n\n"
 
     def push(self, token_type: NodeType, attributes: Attributes = None):
+
         if token_type == NodeType.TEXT and attributes is not None:
             self.__append(attributes.text)
 
@@ -84,6 +85,13 @@ class MarkdownBuilder(TokenBuilder):
                 self.__append("| " + " | ".join(r) + " |\n")
             self.__append("\n")
 
+        elif token_type == NodeType.HREF and attributes is not None:
+            href = attributes.text
+            if not href:
+                print("Warning: HREF token with empty href")
+                return
+            self.__append(f"[{href}]({href})")
+
         elif token_type in self.ignored_token_types:
             pass
 
@@ -100,4 +108,5 @@ class MarkdownBuilder(TokenBuilder):
         self.indent_level = 0
 
     def __append(self, text: str):
+        # TODO: handle indentation
         self.text += text
