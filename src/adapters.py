@@ -26,6 +26,7 @@ class HTMLAdapter(ContentAdapter):
             Ensures the number of queries and answers are consistent.
             Returns a list of tuples indicating the start of each query and answer.
     """
+
     def __init__(self):
         self.bold_start = [(NodeType.START_BOLD, None)]
         self.bold_end = [(NodeType.END_BOLD, None)]
@@ -33,6 +34,9 @@ class HTMLAdapter(ContentAdapter):
         self.italic_end = [(NodeType.END_ITALIC, None)]
         self.start_paragraph = [(NodeType.START_PARAGRAPH, None)]
         self.end_paragraph = [(NodeType.END_PARAGRAPH, None)]
+        self.hline = [(NodeType.HLINE, None)]
+
+        self.heading = lambda level: [(NodeType.HEADING, nodes.HeadingAttributes(level=level))]
         super().__init__()
 
     def extract_content(
@@ -106,6 +110,14 @@ class HTMLAdapter(ContentAdapter):
                     result.extend(self.__process_tags(child))
                 result.extend(self.end_paragraph)
 
+            elif node.name in ["hr"]:
+                result.extend(self.hline)
+
+            elif node.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
+                level = int(node.name[1])
+
+
+
             else:
                 for child in node.contents:
                     result.extend(self.__process_tags(child))
@@ -128,6 +140,7 @@ class HTMLAdapter(ContentAdapter):
 
 
 from builder import MarkdownBuilder
+
 with open("/home/tom/Downloads/Google Gemini.html", "r", encoding="utf-8") as f:
     html = f.read()
     adapter = HTMLAdapter()
@@ -135,7 +148,6 @@ with open("/home/tom/Downloads/Google Gemini.html", "r", encoding="utf-8") as f:
     builder = MarkdownBuilder()
     for c in content:
         builder.push(c[0], c[1])
-    
+
     with open("./tar/chat.md", "w", encoding="utf-8") as f:
         f.write(builder.build())
-    

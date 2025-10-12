@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from nodes import NodeType, Attributes
 
+
 class TokenBuilder(ABC):
     """Abstract builder: construct formatted text from tokens."""
 
@@ -24,6 +25,12 @@ class MarkdownBuilder(TokenBuilder):
         self.text = ""
         self.indent_str = "  "
         self.indent_level = 0
+        self.ignored_token_types = [
+            NodeType.START_QUERY,
+            NodeType.START_ANSWER,
+            NodeType.HEADING,
+            NodeType.START_PARAGRAPH,
+        ]
 
     def push(self, token_type: NodeType, attributes: Attributes = None):
         if token_type == NodeType.TEXT and attributes is not None:
@@ -41,6 +48,11 @@ class MarkdownBuilder(TokenBuilder):
         elif token_type == NodeType.BREAK:
             self.__append_break()
 
+        elif token_type == NodeType.HLINE:
+            self.__append_hline()
+
+        elif token_type in self.ignored_token_types:
+            pass
         else:
             print(
                 f"Warning: Unhandled token type {token_type} with attributes {attributes}"
@@ -67,6 +79,9 @@ class MarkdownBuilder(TokenBuilder):
 
     def __append_italic(self):
         self.text += "*"
+
+    def __append_hline(self):
+        self.text += "\n---\n"
 
     def __append_heading(self, level, text):
         self.text += f"{'#' * level} {text}\n\n"

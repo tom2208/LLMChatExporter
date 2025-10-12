@@ -13,6 +13,7 @@ class NodeType(Enum):
     START_ITALIC = auto()
     END_ITALIC = auto()
     HEADING = auto()
+    HLINE = auto()
     START_QUERY = auto()
     START_ANSWER = auto()
 
