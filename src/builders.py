@@ -32,27 +32,34 @@ class MarkdownBuilder(TokenBuilder):
             NodeType.START_PARAGRAPH,
         ]
 
+        self.paragraph = "\n"
+        self.break_line = "\n"
+        self.hline = "\n---\n"
+        self.italic = "*"
+        self.bold = "**"
+        self.heading = lambda level, text: "#" * level + " " + text + "\n\n"
+
     def push(self, token_type: NodeType, attributes: Attributes = None):
         if token_type == NodeType.TEXT and attributes is not None:
-            self.__append_text(attributes.text)
+            self.__append(attributes.text)
 
         elif token_type == NodeType.END_PARAGRAPH:
             self.__append_paragraph()
 
         elif token_type == NodeType.START_BOLD or token_type == NodeType.END_BOLD:
-            self.__append_bold()
+            self.__append(self.bold)
 
         elif token_type == NodeType.START_ITALIC or token_type == NodeType.END_ITALIC:
-            self.__append_italic()
+            self.__append(self.italic)
 
         elif token_type == NodeType.BREAK:
-            self.__append_break()
+            self.__append(self.break_line)
 
         elif token_type == NodeType.HLINE:
-            self.__append_hline()
+            self.__append(self.hline)
 
         elif token_type == NodeType.HEADING and attributes is not None:
-            self.__append_heading(attributes.level, attributes.text)
+            self.__append(self.heading(attributes.level, attributes.text))
 
         elif token_type in self.ignored_token_types:
             pass
@@ -68,23 +75,5 @@ class MarkdownBuilder(TokenBuilder):
         self.text = ""
         self.indent_level = 0
 
-    def __append_text(self, text: str):
+    def __append(self, text: str):
         self.text += text
-
-    def __append_paragraph(self):
-        self.text += "\n"
-
-    def __append_break(self):
-        self.text += "\n"
-
-    def __append_bold(self):
-        self.text += "**"
-
-    def __append_italic(self):
-        self.text += "*"
-
-    def __append_hline(self):
-        self.text += "\n---\n"
-
-    def __append_heading(self, level, text):
-        self.text += f"{'#' * level} {text}\n\n"
