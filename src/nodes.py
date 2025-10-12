@@ -14,12 +14,18 @@ class NodeType(Enum):
     END_ITALIC = auto()
     HEADING = auto()
     HLINE = auto()
+    TABLE = auto()
     START_QUERY = auto()
     START_ANSWER = auto()
 
 
 class Attributes(ABC):
     pass
+
+
+@dataclass
+class TableAttributes(Attributes):
+    rows: list[list[str]]
 
 
 @dataclass
