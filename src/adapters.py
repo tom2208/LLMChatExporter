@@ -40,6 +40,9 @@ class HTMLAdapter(ContentAdapter):
         self.heading = lambda level, text: [
             (NodeType.HEADING, nodes.HeadingAttributes(level=level, text=text))
         ]
+
+        self.div_class_blacklist = ["table-footer"]
+
         super().__init__()
 
     def extract_content(
@@ -90,7 +93,8 @@ class HTMLAdapter(ContentAdapter):
         """
         if isinstance(node, NavigableString):
             if node:
-                result.extend(self.text(str(node)))
+                if not str(node).isspace():
+                    result.extend(self.text(str(node)))
             else:
                 print("Warning: empty text node")
 
@@ -110,7 +114,17 @@ class HTMLAdapter(ContentAdapter):
                     result.extend(self.__process_tags(child))
                 result.extend(self.italic_start)
 
-            elif node.name in ["p", "div"]:
+            elif node.name == "div":
+                if "class" in node.attrs:
+                    classes = node.attrs["class"]
+                    if any(c in self.div_class_blacklist for c in classes):
+                        return result
+                for child in node.contents:
+                    result.extend(self.__process_tags(child))
+
+            elif node.name in ["p"]:
+                if not node.contents:
+                    return result
                 result.extend(self.start_paragraph)
                 for child in node.contents:
                     result.extend(self.__process_tags(child))
@@ -122,6 +136,15 @@ class HTMLAdapter(ContentAdapter):
             elif node.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
                 level = int(node.name[1])
                 result.extend(self.heading(level, node.get_text()))
+
+            elif node.name in ["a"]:
+                href = node.get("href", "")
+                if href:
+                    result.extend(self.text(f"[{node.get_text()}]({href})"))
+                else:
+                    print("Warning: anchor tag with no href")
+                    for child in node.contents:
+                        result.extend(self.__process_tags(child))
 
             elif node.name in ["table-block"]:
                 for child in node.contents:
