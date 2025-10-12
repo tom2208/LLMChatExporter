@@ -36,7 +36,9 @@ class HTMLAdapter(ContentAdapter):
         self.end_paragraph = [(NodeType.END_PARAGRAPH, None)]
         self.hline = [(NodeType.HLINE, None)]
 
-        self.heading = lambda level: [(NodeType.HEADING, nodes.HeadingAttributes(level=level))]
+        self.heading = lambda level: [
+            (NodeType.HEADING, nodes.HeadingAttributes(level=level))
+        ]
         super().__init__()
 
     def extract_content(
@@ -115,8 +117,6 @@ class HTMLAdapter(ContentAdapter):
 
             elif node.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
                 level = int(node.name[1])
-
-
 
             else:
                 for child in node.contents:
