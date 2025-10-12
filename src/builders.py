@@ -51,6 +51,9 @@ class MarkdownBuilder(TokenBuilder):
         elif token_type == NodeType.HLINE:
             self.__append_hline()
 
+        elif token_type == NodeType.HEADING and attributes is not None:
+            self.__append_heading(attributes.level, attributes.text)
+
         elif token_type in self.ignored_token_types:
             pass
         else:

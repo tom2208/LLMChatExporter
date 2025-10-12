@@ -30,3 +30,4 @@ class TextAttributes(Attributes):
 @dataclass
 class HeadingAttributes(Attributes):
     level: int
+    text: str
