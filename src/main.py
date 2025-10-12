@@ -1,11 +1,23 @@
 from bs4 import BeautifulSoup, NavigableString, Tag
 
+code_lang = ""
+
 
 def escape_md(text):
     return text.replace("`", "\\`")
 
 
+def process_br():
+    return "\n"
+
+
+def process_bold(node, list_stack):
+    return "**" + "".join(node_to_md(c, list_stack) for c in node.children) + "**"
+
+
 def node_to_md(node, list_stack=None):
+    global code_lang
+
     if list_stack is None:
         list_stack = []
 
@@ -16,19 +28,22 @@ def node_to_md(node, list_stack=None):
         return ""
 
     tag = node.name.lower()
+    tag_class = node.get("class")
+
+    if tag == "span" and tag_class is not None:
+        if any(c.startswith("ng-tns") for c in tag_class):
+            code_lang = node.get_text(strip=True)
+            return ""
 
     if tag in ("p", "div"):
         inner = "".join(node_to_md(c, list_stack) for c in node.children).strip()
         return inner + "\n\n" if inner else ""
 
     if tag in ("br",):
-        return "  \n"
+        return process_br()
 
     if tag in ("strong", "b"):
-        return "**" + "".join(node_to_md(c, list_stack) for c in node.children) + "**"
-
-    if tag in ("em", "i"):
-        return "_" + "".join(node_to_md(c, list_stack) for c in node.children) + "_"
+        return process_bold(node, list_stack)
 
     if tag in ("h1", "h2", "h3", "h4", "h5", "h6"):
         level = int(tag[1])
@@ -70,30 +85,43 @@ def node_to_md(node, list_stack=None):
         return "---\n\n"
 
     if tag == "table-block":
-        # custom handling for table-block if needed
         return "".join(node_to_md(c, list_stack) for c in node.children) + "\n\n"
-    
+
     if tag == "table":
         out = []
-        rows = node.find_all('tr')
+        rows = node.find_all("tr")
         if not rows:
             print("Warning: table with no rows")
             return ""
-        
-        column_numbers = len(rows[0].find_all('td'))
+
+        column_numbers = len(rows[0].find_all("td"))
 
         if column_numbers == 0:
             print("Warning: table with no columns")
             return ""
-        
+
         for r in rows:
-            cols = r.find_all(['td'])
+            cols = r.find_all(["td"])
             if len(cols) != column_numbers:
                 print("Warning: inconsistent number of columns in table")
                 return ""
-            out.append("| " + " | ".join(node_to_md(c, list_stack).strip() for c in cols) + " |\n")
+            out.append(
+                "| "
+                + " | ".join(node_to_md(c, list_stack).strip() for c in cols)
+                + " |\n"
+            )
         out.insert(1, "| " + " | ".join(["---"] * column_numbers) + " |\n")
         return "".join(out) + "\n"
+
+    if tag == "code":
+        if tag_class is None:
+            code = "".join(node_to_md(c, list_stack) for c in node.children).strip()
+            return f"`{code}`"
+        elif "code-container" in tag_class:
+            code = "".join(node_to_md(c, list_stack) for c in node.children).strip()
+            result = f"```{code_lang}\n{code}\n```\n\n"
+            code_lang = ""
+            return result
 
     # fallback: render children
     return "".join(node_to_md(c, list_stack) for c in node.children)
@@ -134,5 +162,5 @@ def generate_chat():
     return chat
 
 
-with open("/home/tom/Downloads/output.md", "w", encoding="utf-8") as f:
+with open("./tar/chat.md", "w", encoding="utf-8") as f:
     f.write(generate_chat())

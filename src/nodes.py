@@ -1,0 +1,31 @@
+from enum import Enum, auto
+from dataclasses import dataclass
+from abc import ABC, abstractmethod
+
+
+class NodeType(Enum):
+    TEXT = auto()
+    START_PARAGRAPH = auto()
+    END_PARAGRAPH = auto()
+    BREAK = auto()
+    START_BOLD = auto()
+    END_BOLD = auto()
+    START_ITALIC = auto()
+    END_ITALIC = auto()
+    HEADING = auto()
+    START_QUERY = auto()
+    START_ANSWER = auto()
+
+
+class Attributes(ABC):
+    pass
+
+
+@dataclass
+class TextAttributes(Attributes):
+    text: str
+
+
+@dataclass
+class HeadingAttributes(Attributes):
+    level: int
