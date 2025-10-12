@@ -44,7 +44,7 @@ class MarkdownBuilder(TokenBuilder):
             self.__append(attributes.text)
 
         elif token_type == NodeType.END_PARAGRAPH:
-            self.__append_paragraph()
+            self.__append(self.paragraph)
 
         elif token_type == NodeType.START_BOLD or token_type == NodeType.END_BOLD:
             self.__append(self.bold)
