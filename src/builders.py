@@ -92,6 +92,10 @@ class MarkdownBuilder(TokenBuilder):
                 return
             self.__append(f"[{href}]({href})")
 
+        elif token_type == NodeType.IMAGE and attributes is not None:
+            alt = attributes.text or "Image"
+            self.__append(f"![{alt}]({alt})")
+
         elif token_type in self.ignored_token_types:
             pass
 
