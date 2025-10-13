@@ -45,7 +45,7 @@ class HTMLAdapter(ContentAdapter):
 
         super().__init__()
 
-    def extract_code_language(self, child, parent_node):
+    def __extract_code_language(self, child, parent_node):
         """Return language text or None."""
         if child.name != "span":
             return None
@@ -56,7 +56,7 @@ class HTMLAdapter(ContentAdapter):
             return child.get_text(strip=True)
         return None
 
-    def extract_code_text(self, code_node):
+    def __extract_code_text(self, code_node):
         """Return concatenated code text from a <code> node."""
         parts = []
         for c in code_node.children:
@@ -217,15 +217,15 @@ class HTMLAdapter(ContentAdapter):
 
                 for child in node.descendants:
                     # try language first (non-destructive)
-                    lang = self.extract_code_language(child, node)
+                    lang = self.__extract_code_language(child, node)
                     if lang:
                         code_lang = lang
                         continue
 
                     # then code content
                     if child.name == "code":
-                        code = self.extract_code_text(child)
-                        break  # we just expect one code block
+                        code = self.__extract_code_text(child)
+                        break # we just expect one code block
 
                 result.append(
                     (
@@ -233,6 +233,7 @@ class HTMLAdapter(ContentAdapter):
                         nodes.CodeBlockAttributes(code=code, language=code_lang),
                     )
                 )
+
             else:
                 for child in node.contents:
                     result.extend(self.__process_tags(child))
