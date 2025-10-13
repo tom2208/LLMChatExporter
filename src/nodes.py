@@ -16,6 +16,7 @@ class NodeType(Enum):
     HLINE = auto()
     TABLE = auto()
     HREF = auto()
+    IMAGE = auto()
     START_QUERY = auto()
     START_ANSWER = auto()
 

@@ -137,6 +137,18 @@ class HTMLAdapter(ContentAdapter):
                 level = int(node.name[1])
                 result.extend(self.heading(level, node.get_text()))
 
+            elif node.name in ["img"]:
+                print(node)
+                alt = node.get("alt")
+                if not alt:
+                    alt = "Image"
+                src = node.get("src")
+                print(f"Image src: {src}, alt: {alt}")
+                if src:
+                    result.extend(self.text(f"![{alt}]({src})"))
+                else:
+                    print("Warning: image tag with no src")
+
             elif node.name in ["a"]:
                 href = node.get("href", "")
                 if href:
@@ -190,7 +202,7 @@ class HTMLAdapter(ContentAdapter):
 
 from builders import MarkdownBuilder
 
-with open("/home/tom/Downloads/Google Gemini.html", "r", encoding="utf-8") as f:
+with open("./tar/Google Gemini.html", "r", encoding="utf-8") as f:
     html = f.read()
     adapter = HTMLAdapter()
     content = adapter.extract_content(html)
