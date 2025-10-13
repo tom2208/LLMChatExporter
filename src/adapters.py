@@ -138,12 +138,10 @@ class HTMLAdapter(ContentAdapter):
                 result.extend(self.heading(level, node.get_text()))
 
             elif node.name in ["img"]:
-                print(node)
                 alt = node.get("alt")
                 if not alt:
                     alt = "Image"
                 src = node.get("src")
-                print(f"Image src: {src}, alt: {alt}")
                 if src:
                     result.extend(self.text(f"![{alt}]({src})"))
                 else:
@@ -187,6 +185,35 @@ class HTMLAdapter(ContentAdapter):
                         table_rows.append(texts)
 
                 result.append((NodeType.TABLE, nodes.TableAttributes(rows=table_rows)))
+
+            elif node.name in ["code-block"]:
+                code_lang = ""
+                code = ""
+
+                for child in node.descendants:
+                    # If available get the code language
+                    if child.name in ["span"] and node.get("class") is not None:
+                        if any(c.startswith("ng-tns") for c in child.get("class")):
+                            code_lang = child.get_text(strip=True)
+
+                    # Get the code content
+                    elif child.name in ["code"]:
+                        code_results = []
+                        for c in child.children:
+                            code_results.extend(self.__process_tags(c))
+
+                        code = "".join(
+                            attr.text
+                            for ntype, attr in code_results
+                            if ntype == NodeType.TEXT and attr is not None
+                        )
+
+                result.append(
+                    (
+                        NodeType.CODE_BLOCK,
+                        nodes.CodeBlockAttributes(code=code, language=code_lang),
+                    )
+                )
 
             else:
                 for child in node.contents:

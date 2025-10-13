@@ -96,6 +96,11 @@ class MarkdownBuilder(TokenBuilder):
             alt = attributes.text or "Image"
             self.__append(f"![{alt}]({alt})")
 
+        elif token_type == NodeType.CODE_BLOCK and attributes is not None:
+            code = attributes.code
+            language = attributes.language or ""
+            self.__append(f"\n```{language}\n{code}\n```\n")
+
         elif token_type in self.ignored_token_types:
             pass
 
