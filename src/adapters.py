@@ -45,6 +45,31 @@ class HTMLAdapter(ContentAdapter):
 
         super().__init__()
 
+    def extract_code_language(self, child, parent_node):
+        """Return language text or None."""
+        if child.name != "span":
+            return None
+        classes = parent_node.get("class")
+        if not classes:
+            return None
+        if any(c.startswith("ng-tns") for c in child.get("class")):
+            return child.get_text(strip=True)
+        return None
+
+    def extract_code_text(self, code_node):
+        """Return concatenated code text from a <code> node."""
+        parts = []
+        for c in code_node.children:
+            # explicit span handling
+            if getattr(c, "name", None) == "span":
+                for span_child in c.descendants:
+                    if isinstance(span_child, NavigableString):
+                        parts.append(str(span_child))
+            elif isinstance(c, NavigableString):
+                parts.append(str(c))
+            # ignore other node types
+        return "".join(parts)
+
     def extract_content(
         self, raw_data: str
     ) -> List[tuple[NodeType, Optional[Attributes]]]:
@@ -187,26 +212,20 @@ class HTMLAdapter(ContentAdapter):
                 result.append((NodeType.TABLE, nodes.TableAttributes(rows=table_rows)))
 
             elif node.name in ["code-block"]:
-                code_lang = ""
+                code_lang = None
                 code = ""
 
                 for child in node.descendants:
-                    # If available get the code language
-                    if child.name in ["span"] and node.get("class") is not None:
-                        if any(c.startswith("ng-tns") for c in child.get("class")):
-                            code_lang = child.get_text(strip=True)
+                    # try language first (non-destructive)
+                    lang = self.extract_code_language(child, node)
+                    if lang:
+                        code_lang = lang
+                        continue
 
-                    # Get the code content
-                    elif child.name in ["code"]:
-                        code_results = []
-                        for c in child.children:
-                            code_results.extend(self.__process_tags(c))
-
-                        code = "".join(
-                            attr.text
-                            for ntype, attr in code_results
-                            if ntype == NodeType.TEXT and attr is not None
-                        )
+                    # then code content
+                    if child.name == "code":
+                        code = self.extract_code_text(child)
+                        break  # we just expect one code block
 
                 result.append(
                     (
@@ -214,7 +233,6 @@ class HTMLAdapter(ContentAdapter):
                         nodes.CodeBlockAttributes(code=code, language=code_lang),
                     )
                 )
-
             else:
                 for child in node.contents:
                     result.extend(self.__process_tags(child))
