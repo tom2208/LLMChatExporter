@@ -19,10 +19,17 @@ class NodeType(Enum):
     IMAGE = auto()
     START_QUERY = auto()
     START_ANSWER = auto()
+    CODE_BLOCK = auto()
 
 
 class Attributes(ABC):
     pass
+
+
+@dataclass
+class CodeBlockAttributes(Attributes):
+    code: str
+    language: str
 
 
 @dataclass
