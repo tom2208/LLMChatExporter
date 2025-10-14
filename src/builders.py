@@ -105,7 +105,7 @@ class MarkdownBuilder(TokenBuilder):
             self.__append(f"\n```{language}\n{code}\n```\n")
 
         elif token_type == NodeType.START_ORDERED_LIST:
-            self. __append(self.list_item)
+            self.__append(self.list_item)
             self.indent_level += 1
 
         elif token_type == NodeType.END_ORDERED_LIST:

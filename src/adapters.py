@@ -225,7 +225,7 @@ class HTMLAdapter(ContentAdapter):
                     # then code content
                     if child.name == "code":
                         code = self.__extract_code_text(child)
-                        break # we just expect one code block
+                        break  # we just expect one code block
 
                 result.append(
                     (
@@ -239,7 +239,7 @@ class HTMLAdapter(ContentAdapter):
                 for child in node.contents:
                     result.extend(self.__process_tags(child))
                 result.append((NodeType.END_ORDERED_LIST, None))
-            
+
             elif node.name in ["ul"]:
                 result.append((NodeType.START_UNORDERED_LIST, None))
                 for child in node.contents:
