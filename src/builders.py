@@ -25,6 +25,8 @@ class MarkdownBuilder(TokenBuilder):
         self.text = ""
         self.indent_str = "  "
         self.indent_level = 0
+        self.ol_counters_stack = []
+
         self.ignored_token_types = [
             NodeType.START_QUERY,
             NodeType.START_ANSWER,
@@ -37,6 +39,7 @@ class MarkdownBuilder(TokenBuilder):
         self.italic = "*"
         self.bold = "**"
         self.heading = lambda level, text: "#" * level + " " + text + "\n\n"
+        self.list_item = "* "
 
     def push(self, token_type: NodeType, attributes: Attributes = None):
 
@@ -101,6 +104,17 @@ class MarkdownBuilder(TokenBuilder):
             language = attributes.language or ""
             self.__append(f"\n```{language}\n{code}\n```\n")
 
+        elif token_type == NodeType.START_ORDERED_LIST:
+            self. __append(self.list_item)
+            self.indent_level += 1
+
+        elif token_type == NodeType.END_ORDERED_LIST:
+            self.indent_level = max(0, self.indent_level - 1)
+            self.__append(self.break_line)
+
+        elif token_type == NodeType.START_UNORDERED_LIST:
+            self.indent_level += 1
+
         elif token_type in self.ignored_token_types:
             pass
 
@@ -117,5 +131,9 @@ class MarkdownBuilder(TokenBuilder):
         self.indent_level = 0
 
     def __append(self, text: str):
-        # TODO: handle indentation
-        self.text += text
+        lines = text.split("\n")
+        if len(lines) == 1:
+            self.text += self.indent_str * self.indent_level + text
+        else:
+            for i, line in enumerate(lines):
+                self.text += self.indent_str * self.indent_level + line

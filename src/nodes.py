@@ -17,9 +17,15 @@ class NodeType(Enum):
     TABLE = auto()
     HREF = auto()
     IMAGE = auto()
+    CODE_BLOCK = auto()
+    START_UNORDERED_LIST = auto()
+    END_UNORDERED_LIST = auto()
+    START_ORDERED_LIST = auto()
+    END_ORDERED_LIST = auto()
+    START_LIST_ITEM = auto()
+    END_LIST_ITEM = auto()
     START_QUERY = auto()
     START_ANSWER = auto()
-    CODE_BLOCK = auto()
 
 
 class Attributes(ABC):
