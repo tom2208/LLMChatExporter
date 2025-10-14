@@ -234,6 +234,24 @@ class HTMLAdapter(ContentAdapter):
                     )
                 )
 
+            elif node.name in ["ol"]:
+                result.append((NodeType.START_ORDERED_LIST, None))
+                for child in node.contents:
+                    result.extend(self.__process_tags(child))
+                result.append((NodeType.END_ORDERED_LIST, None))
+            
+            elif node.name in ["ul"]:
+                result.append((NodeType.START_UNORDERED_LIST, None))
+                for child in node.contents:
+                    result.extend(self.__process_tags(child))
+                result.append((NodeType.END_UNORDERED_LIST, None))
+
+            elif node.name in ["li"]:
+                result.append((NodeType.START_LIST_ITEM, None))
+                for child in node.contents:
+                    result.extend(self.__process_tags(child))
+                result.append((NodeType.END_LIST_ITEM, None))
+
             else:
                 for child in node.contents:
                     result.extend(self.__process_tags(child))
