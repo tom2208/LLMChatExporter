@@ -23,9 +23,8 @@ class MarkdownBuilder(TokenBuilder):
 
     def __init__(self):
         self.text = ""
-        self.indent_str = "  "
-        self.indent_level = 0
-        self.ol_counters_stack = []
+        self.indent_str = "\t"
+        self.list_index_stack = []
 
         self.ignored_token_types = [
             NodeType.START_QUERY,
@@ -40,6 +39,7 @@ class MarkdownBuilder(TokenBuilder):
         self.bold = "**"
         self.heading = lambda level, text: "#" * level + " " + text + "\n\n"
         self.list_item = "* "
+        self.numbered_list_item = lambda index: f"{index}. "
 
     def push(self, token_type: NodeType, attributes: Attributes = None):
 
@@ -86,7 +86,7 @@ class MarkdownBuilder(TokenBuilder):
 
             for r in rows[1:]:
                 self.__append("| " + " | ".join(r) + " |\n")
-            self.__append("\n")
+            self.__append(self.break_line)
 
         elif token_type == NodeType.HREF and attributes is not None:
             href = attributes.text
@@ -104,16 +104,27 @@ class MarkdownBuilder(TokenBuilder):
             language = attributes.language or ""
             self.__append(f"\n```{language}\n{code}\n```\n")
 
-        elif token_type == NodeType.START_ORDERED_LIST:
-            self.__append(self.list_item)
-            self.indent_level += 1
-
-        elif token_type == NodeType.END_ORDERED_LIST:
-            self.indent_level = max(0, self.indent_level - 1)
-            self.__append(self.break_line)
+        elif token_type == NodeType.START_ORDERED_LIST and attributes is not None:
+            self.list_index_stack.append(attributes.start_index)
 
         elif token_type == NodeType.START_UNORDERED_LIST:
-            self.indent_level += 1
+            self.list_index_stack.append(0)
+
+        elif (
+            token_type == NodeType.END_ORDERED_LIST
+            or token_type == NodeType.END_UNORDERED_LIST
+        ):
+            self.list_index_stack.pop()
+
+        elif token_type == NodeType.LIST_ITEM:
+            if self.list_index_stack:
+                if self.list_index_stack[-1] != 0:
+                    self.__append(self.numbered_list_item(self.list_index_stack[-1]))
+                    self.list_index_stack[-1] += 1
+                else:
+                    self.__append(self.list_item)
+            else:
+                print("Warning: LIST_ITEM token outside of a list context")
 
         elif token_type in self.ignored_token_types:
             pass
@@ -128,12 +139,28 @@ class MarkdownBuilder(TokenBuilder):
 
     def reset(self):
         self.text = ""
-        self.indent_level = 0
+        self.list_index_stack = []
 
     def __append(self, text: str):
+        if not text:
+            return
+
         lines = text.split("\n")
-        if len(lines) == 1:
-            self.text += self.indent_str * self.indent_level + text
-        else:
-            for i, line in enumerate(lines):
-                self.text += self.indent_str * self.indent_level + line
+        indent = (
+            self.indent_str * (len(self.list_index_stack) - 1)
+            if self.list_index_stack
+            else ""
+        )
+
+        for i, line in enumerate(lines):
+            # Skip indenting the first line if we're continuing on the same line
+            if i == 0 and self.text and not self.text.endswith("\n"):
+                self.text += line
+            else:
+                # Add indent for new lines (but not for trailing empty line from split)
+                if i < len(lines) - 1 or line:
+                    self.text += indent + line
+
+            # Add newline except for the last line (unless original text ended with \n)
+            if i < len(lines) - 1:
+                self.text += "\n"

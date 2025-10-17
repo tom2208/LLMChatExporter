@@ -22,14 +22,18 @@ class NodeType(Enum):
     END_UNORDERED_LIST = auto()
     START_ORDERED_LIST = auto()
     END_ORDERED_LIST = auto()
-    START_LIST_ITEM = auto()
-    END_LIST_ITEM = auto()
+    LIST_ITEM = auto()
     START_QUERY = auto()
     START_ANSWER = auto()
 
 
 class Attributes(ABC):
     pass
+
+
+@dataclass
+class OrderedListAttributes(Attributes):
+    start_index: int = 1
 
 
 @dataclass
