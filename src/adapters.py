@@ -235,7 +235,17 @@ class HTMLAdapter(ContentAdapter):
                 )
 
             elif node.name in ["ol"]:
-                result.append((NodeType.START_ORDERED_LIST, None))
+                if node.has_attr("start"):
+                    try:
+                        start_index = int(node["start"])
+                    except ValueError:
+                        start_index = 1
+                result.append(
+                    (
+                        NodeType.START_ORDERED_LIST,
+                        nodes.OrderedListAttributes(start_index=start_index),
+                    )
+                )
                 for child in node.contents:
                     result.extend(self.__process_tags(child))
                 result.append((NodeType.END_ORDERED_LIST, None))
@@ -247,10 +257,9 @@ class HTMLAdapter(ContentAdapter):
                 result.append((NodeType.END_UNORDERED_LIST, None))
 
             elif node.name in ["li"]:
-                result.append((NodeType.START_LIST_ITEM, None))
+                result.append((NodeType.LIST_ITEM, None))
                 for child in node.contents:
                     result.extend(self.__process_tags(child))
-                result.append((NodeType.END_LIST_ITEM, None))
 
             else:
                 for child in node.contents:
