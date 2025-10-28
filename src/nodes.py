@@ -32,6 +32,18 @@ class Attributes(ABC):
 
 
 @dataclass
+class ImageAttributes(Attributes):
+    alt: str
+    src: str
+
+
+@dataclass
+class HrefAttributes(Attributes):
+    text: str
+    link: str
+
+
+@dataclass
 class OrderedListAttributes(Attributes):
     start_index: int = 1
 

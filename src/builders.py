@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from nodes import NodeType, Attributes
+from styles import SimpleMarkdownStyle
 
 
 class TokenBuilder(ABC):
@@ -32,6 +33,8 @@ class MarkdownBuilder(TokenBuilder):
             NodeType.START_PARAGRAPH,
         ]
 
+        self.style = SimpleMarkdownStyle()
+
         self.paragraph = "\n"
         self.break_line = "\n"
         self.hline = "\n---\n"
@@ -45,6 +48,12 @@ class MarkdownBuilder(TokenBuilder):
 
         if token_type == NodeType.TEXT and attributes is not None:
             self.__append(attributes.text)
+
+        elif token_type == NodeType.START_ANSWER:
+            self.__append(self.style.pre_answer, out_of_text=True)
+
+        elif token_type == NodeType.START_QUERY:
+            self.__append(self.style.pre_query, out_of_text=True)
 
         elif token_type == NodeType.END_PARAGRAPH:
             self.__append(self.paragraph)
@@ -89,15 +98,17 @@ class MarkdownBuilder(TokenBuilder):
             self.__append(self.break_line)
 
         elif token_type == NodeType.HREF and attributes is not None:
-            href = attributes.text
-            if not href:
+            link = attributes.link
+            text = attributes.text
+            if not link:
                 print("Warning: HREF token with empty href")
                 return
-            self.__append(f"[{href}]({href})")
+            self.__append(f"[{text}]({link})")
 
         elif token_type == NodeType.IMAGE and attributes is not None:
-            alt = attributes.text or "Image"
-            self.__append(f"![{alt}]({alt})")
+            alt = attributes.alt or "Image"
+            src = attributes.src or ""
+            self.__append(f"![{alt}]({src})")
 
         elif token_type == NodeType.CODE_BLOCK and attributes is not None:
             code = attributes.code
@@ -141,7 +152,7 @@ class MarkdownBuilder(TokenBuilder):
         self.text = ""
         self.list_index_stack = []
 
-    def __append(self, text: str):
+    def __append(self, text: str, out_of_text=False):
         if not text:
             return
 
@@ -159,6 +170,8 @@ class MarkdownBuilder(TokenBuilder):
             else:
                 # Add indent for new lines (but not for trailing empty line from split)
                 if i < len(lines) - 1 or line:
+                    if not out_of_text:
+                        self.text += self.style.line_prefix
                     self.text += indent + line
 
             # Add newline except for the last line (unless original text ended with \n)
