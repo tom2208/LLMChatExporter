@@ -36,6 +36,12 @@ class HTMLAdapter(ContentAdapter):
         self.end_paragraph = [(NodeType.END_PARAGRAPH, None)]
         self.hline = [(NodeType.HLINE, None)]
         self.text = lambda text: [(NodeType.TEXT, nodes.TextAttributes(text=text))]
+        self.img = lambda alt, src: [
+            (NodeType.IMAGE, nodes.ImageAttributes(alt=alt, src=src))
+        ]
+        self.href = lambda text, link: [
+            (NodeType.HREF, nodes.HrefAttributes(text=text, link=link))
+        ]
 
         self.heading = lambda level, text: [
             (NodeType.HEADING, nodes.HeadingAttributes(level=level, text=text))
@@ -168,14 +174,14 @@ class HTMLAdapter(ContentAdapter):
                     alt = "Image"
                 src = node.get("src")
                 if src:
-                    result.extend(self.text(f"![{alt}]({src})"))
+                    result.extend(self.img(alt, src))
                 else:
                     print("Warning: image tag with no src")
 
             elif node.name in ["a"]:
                 href = node.get("href", "")
                 if href:
-                    result.extend(self.text(f"[{node.get_text()}]({href})"))
+                    result.extend(self.href(node.get_text(), href))
                 else:
                     print("Warning: anchor tag with no href")
                     for child in node.contents:
