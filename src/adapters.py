@@ -267,6 +267,11 @@ class HTMLAdapter(ContentAdapter):
                 for child in node.contents:
                     result.extend(self.__process_tags(child))
 
+            elif node.name in ["youtube-block"]:
+                for child in node.contents:
+                    result.extend(self.__process_tags(child))
+                result.append((NodeType.BREAK, None))
+
             else:
                 for child in node.contents:
                     result.extend(self.__process_tags(child))
