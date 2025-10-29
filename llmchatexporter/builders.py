@@ -4,23 +4,198 @@ from styles import SimpleMarkdownStyle
 
 
 class TokenBuilder(ABC):
-    """Abstract builder: construct formatted text from tokens."""
+    """
+    Abstract base class for building a sequence or stream of tokens from node events.
+    Implementations of TokenBuilder accumulate tokens produced by calls to push()
+    and then produce a final representation via build(). This class defines the
+    contract; concrete subclasses determine the concrete token representation
+    (e.g. strings, tuples, Token objects) and any formatting, validation or
+    coalescing rules.
+    Methods
+    - push(token_type: NodeType, attributes: Attributes = None)
+        Add a token of the given node type and optional attributes to the current
+        build state. Implementations may validate token_type/attributes, transform
+        or combine tokens, and may maintain internal scope or context derived from
+        the sequence of pushes.
+    - build()
+        Return a finalized, immutable representation of the tokens accumulated so
+        far. The return type is implementation-specific but should represent a
+        complete snapshot of the builder's output (for example, a list of tokens,
+        a serialized string, or a byte sequence). build() should not modify the
+        builder state unless explicitly documented by the subclass.
+    - reset()
+        Clear any internal state so the builder can begin a new, empty token
+        sequence. After reset(), a subsequent build() should represent an empty
+        output (unless the subclass documents otherwise).
+    Behavioral notes
+    - Subclasses are responsible for documenting the exact token types, attribute
+      schema, return type of build(), and any validation rules or exceptions.
+    - Thread-safety is not guaranteed by this base class; callers should
+      synchronize access to a builder instance if it may be used concurrently.
+    - Implementations may choose whether build() consumes or preserves the
+      accumulated state; callers should consult the concrete subclass API.
+    Example (conceptual)
+        # subclass defines concrete token representation and semantics
+        b = MyTokenBuilder()
+        b.push(NodeType.TEXT, TextAttribute(text="hello"))
+        b.push(NodeType.BREAK, None)
+        b.push(NodeType.TEXT, TextAttribute(text="world"))
+        output = b.build()
+        b.reset()
+    """
 
     @abstractmethod
     def push(self, token_type: NodeType, attributes: Attributes = None):
+        """
+        Push a new node (token) onto the builder's internal stack and make it the current node.
+        This method creates a new node of the given token_type, attaches the optional
+        attributes, updates the builder's internal parent/child relationships and stack,
+        and sets the newly created node as the current active node for subsequent
+        operations.
+        Parameters
+        ----------
+        token_type : NodeType
+            The type of node/token to create and push. This should be one of the
+            values defined by the NodeType enum (or equivalent) used by the builder.
+        attributes : Attributes, optional
+            Optional attributes or metadata to attach to the new node. The exact shape
+            of Attributes depends on the builder implementation (commonly a dict-like
+            mapping). If None, the node is created with no attributes or with default
+            attributes.
+        Returns
+        -------
+        None
+            The method modifies the builder state in-place and does not return a value.
+        Behavior and side effects
+        -------------------------
+        - A new node object is instantiated using token_type and attributes.
+        - The new node is appended as a child of the current node (if one exists).
+        - The new node is pushed onto the internal stack and becomes the current node.
+        - If token_type represents a self-closing or terminal token, the node may be
+          immediately closed (popped) according to the builder's rules.
+        - The builder may normalize or validate attributes before attaching them.
+        - The builder updates any position, depth, or context tracking structures.
+        Exceptions
+        ----------
+        TypeError
+            If token_type is not a valid NodeType or attributes is not of an expected
+            type (if strict typing is enforced).
+        ValueError
+            If pushing token_type would violate the document structure or builder rules.
+        RuntimeError
+            If the internal stack is in an inconsistent state and the operation cannot
+            be completed.
+        Examples
+        --------
+        # Typical usage (illustrative; actual APIs may differ):
+        builder.push(NodeType.ELEMENT, ElementAttribute())
+        builder.push(NodeType.BREAK, None)
+        builder.push(NodeType.TEXT, TextAttribute(text="Hello World"))
+        """
+
         pass
 
     @abstractmethod
     def build(self):
+        @abstractmethod
+        def build(self):
+            """
+            Build and return an in-memory representation of the accumulated tokens.
+            This method must not perform any filesystem writes. Builders that need to
+            persist results to disk should expose a separate API for that behavior.
+            Returns:
+                Any: An in-memory build result (commonly a str, list, dict, or a
+                     custom result object). The concrete subclass defines the exact
+                     return type and semantics.
+            Raises:
+                RuntimeError: If the builder cannot produce a result from current state.
+            """
+            raise NotImplementedError(
+                "Subclasses must implement build() without writing files."
+            )
+
         pass
 
     @abstractmethod
     def reset(self):
+        """Reset builder to a clean initial state.
+
+        Clear in-memory buffers, counters, and temporary resources so the instance
+        can be reused. Does not save partial work..
+        """
         pass
 
 
 class MarkdownBuilder(TokenBuilder):
-    """MarkdownBuilder constructs Markdown formatted text from tokens."""
+    """MarkdownBuilder
+    Convert a sequence of token events into a Markdown string.
+    Description
+    -----------
+    MarkdownBuilder accumulates token events (node types plus optional attributes)
+    and converts them into a Markdown document. It handles common Markdown
+    constructs such as plain text, headings, paragraphs, horizontal rules,
+    line breaks, bold/italic, links, images, code blocks, tables, and nested
+    ordered/unordered lists. The builder relies on a configurable style object
+    (for line prefixes and preambles) and an internal stack to track list
+    nesting and numbering.
+    Key attributes
+    --------------
+    text : str
+        Accumulated output being built.
+    indent_str : str
+        String used for one level of list indentation (default: a tab).
+    list_index_stack : list[int]
+        Stack tracking list nesting; non-zero values represent ordered list
+        current indices, zero represents an unordered list.
+    style
+        Style object (e.g., SimpleMarkdownStyle) that provides line_prefix and
+        preamble strings for queries/answers and other formatting hooks.
+    Various formatting templates
+        Attributes such as paragraph, break_line, hline, italic, bold, heading,
+        list_item, and numbered_list_item are used as templates/callables to
+        render specific constructs. These can be overridden to alter output.
+    Primary methods
+    ---------------
+    push(token_type, attributes=None)
+        Process a single token event and update the internal buffer.
+        push prints warnings for malformed attributes or unexpected states
+        (for example, a LIST_ITEM outside of a list).
+    build()
+        Return the final Markdown string. The returned value is the accumulated
+        text with surrounding whitespace trimmed and a single trailing newline.
+    reset()
+        Clear the accumulated text and reset list state for reuse.
+    Implementation notes
+    --------------------
+    - Internal helper __append(text, out_of_text=False) handles line splitting,
+      indentation according to list depth, and optional style.line_prefixing.
+      It attempts to avoid duplicating prefixes when appending to an existing
+      (non-newline-terminated) line.
+    - list_index_stack entries:
+        0 => unordered list
+        n > 0 => ordered list starting at n
+      START_ORDERED_LIST pushes a start index; LIST_ITEM increments it after use.
+    - The builder prints warnings for invalid table structures, empty hrefs,
+      or other malformed token attributes instead of raising exceptions.
+    Usage
+    -----
+    Example (illustrative):
+        b = MarkdownBuilder()
+        b.push(NodeType.TEXT, Attributes(text="Hello, world!"))
+        b.push(NodeType.END_PARAGRAPH)
+        b.push(NodeType.HEADING, Attributes(level=2, text="Details"))
+        b.push(NodeType.START_UNORDERED_LIST)
+        b.push(NodeType.LIST_ITEM); b.push(NodeType.TEXT, Attributes(text="First item"))
+        b.push(NodeType.LIST_ITEM); b.push(NodeType.TEXT, Attributes(text="Second item"))
+        b.push(NodeType.END_UNORDERED_LIST)
+        markdown = b.build()
+    Notes
+    -----
+    - The builder focuses on readable Markdown output rather than exhaustive
+      token coverage; it intentionally omits some token types from processing.
+    - Customization: alter template attributes or provide a different style
+      object to change prefixes and preambles.
+    """
 
     def __init__(self):
         self.text = ""
