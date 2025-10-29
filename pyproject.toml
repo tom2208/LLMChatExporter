@@ -1,9 +1,9 @@
 [project]
 name = "LLMChatExporter"
 version = "0.1.0"
-description = "Extracting chats of common LLMs that don't support this option ."
+description = "Extracting chats of common LLMs that don't support this option."
 authors = [
-    {name = "Your Name",email = "you@example.com"}
+    {name = "tom2208",email = "dev.tom2208@proton.me"}
 ]
 license = {text = "GNU General Public License v3.0"}
 readme = "README.md"
