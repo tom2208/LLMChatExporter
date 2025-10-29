@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from bs4 import BeautifulSoup, NavigableString, Tag
-from main import node_to_md
 from nodes import NodeType, Attributes
 import nodes
 from typing import Optional, List
