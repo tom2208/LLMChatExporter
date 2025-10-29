@@ -27,12 +27,12 @@ poetry install
 3. Run the CLI via Poetry:
     * One-off:
         ```bash
-        poetry run python -m llmchatexporter <input.html> <output.md>
+        poetry run python llmchatexporter <input.html> <output.md>
         ```
     * Or spawn the virtual env:
         ```bash
         poetry shell
-        python -m llmchatexporter <input.html> <output.txt>
+        python llmchatexporter <input.html> <output.txt>
         ```
 
 ### Usage (CLI)
