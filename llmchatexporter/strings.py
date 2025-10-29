@@ -2,7 +2,7 @@
 # command line interface strings
 APP_NAME = "LLM Chat Exporter"
 DESCRIPTION = "A tool to extract and export chats from various LLM platforms."
-CONTENT_CONVERTED_SAVED = "Converted content written to {arg0}"
+CONTENT_CONVERTED_SAVED = "Converted content written to {arg0}."
 ARG_INPUT_HELP = "Path to the input HTML file containing the chat."
 ARG_OUTPUT_HELP = "Path to the output file where the exported chat will be saved."
 
