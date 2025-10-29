@@ -1,6 +1,6 @@
 [project]
 name = "LLMChatExporter"
-version = "0.1.0"
+version = "0.1.1"
 description = "Extracting chats of common LLMs that don't support this option."
 authors = [
     {name = "tom2208",email = "dev.tom2208@proton.me"}

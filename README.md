@@ -54,7 +54,7 @@ How to obtain the HTML to export:
 
 ### Example
 ```bash
-poetry run python -m llmchatexporter chat_export.html conversation.md
+poetry run python llmchatexporter chat_export.html conversation.md
 ```
 
 ### Development
