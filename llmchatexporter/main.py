@@ -5,6 +5,36 @@ from converters import GeminiHTMLToMarkdownConverter
 
 
 def parse_args(argv=None):
+    """
+    Parse command-line arguments for the LLMChatExporter CLI.
+    This function builds and returns an argparse. Namespace configured for the
+    LLMChatExporter program. The parser expects two positional Path arguments
+    (input and output) and an optional verbose flag.
+    Parameters
+    ----------
+    argv : Optional[Sequence[str]]
+        Sequence of argument strings to parse (e.g. ['in.html', 'out.json']).
+        If None, the underlying argparse.ArgumentParser will parse sys.argv[1:].
+    Returns
+    -------
+    argparse.Namespace
+        Namespace with the following attributes:
+          - verbose (bool): True if -v/--verbose was supplied.
+          - input (pathlib.Path): Path to the input HTML file.
+          - output (pathlib.Path): Path to the output file.
+    Raises
+    ------
+    SystemExit
+        Raised by argparse when argument parsing fails or when help/version
+        flags are requested.
+    Example
+    -------
+    >>> parse_args(['-v', 'chat.html', 'export.json']).verbose
+    True
+    >>> parse_args(['chat.html', 'export.json']).input
+    PosixPath('chat.html')
+    """
+
     p = argparse.ArgumentParser(
         prog="LLMChatExporter",
         description="Extracting chats of common LLMs that don't support this option.",
