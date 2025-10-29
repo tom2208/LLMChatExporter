@@ -2,6 +2,7 @@ import argparse
 import sys
 from pathlib import Path
 from converters import GeminiHTMLToMarkdownConverter
+import strings
 
 
 def parse_args(argv=None):
@@ -25,11 +26,11 @@ def parse_args(argv=None):
     """
 
     p = argparse.ArgumentParser(
-        prog="LLMChatExporter",
-        description="Extracting chats of common LLMs that don't support this option.",
+        prog=strings.APP_NAME,
+        description=strings.DESCRIPTION,
     )
-    p.add_argument("input", type=Path, help="Input html file")
-    p.add_argument("output", type=Path, help="Output file")
+    p.add_argument("input", type=Path, help=strings.ARG_INPUT_HELP)
+    p.add_argument("output", type=Path, help=strings.ARG_OUTPUT_HELP)
     return p.parse_args(argv)
 
 
@@ -44,7 +45,7 @@ def main(argv=None):
         return 2
 
     converter.write(args.output)
-    print(f"Converted content written to {args.output}")
+    print(strings.CONTENT_CONVERTED_SAVED.format(arg0=args.output))
 
     return 0
 

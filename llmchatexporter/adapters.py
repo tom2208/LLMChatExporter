@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup, NavigableString, Tag
 from nodes import NodeType, Attributes
 import nodes
 from typing import Optional, List
+import strings
 
 
 class ContentAdapter(ABC):
@@ -199,7 +200,7 @@ class GeminiHTMLAdapter(ContentAdapter):
                 if not str(node).isspace():
                     result.extend(self.text(str(node)))
             else:
-                print("Warning: empty text node")
+                print(strings.WARNING_EMPTY_TEXT_NODE)
 
         elif isinstance(node, Tag):
             if node.name == "br":
@@ -248,14 +249,14 @@ class GeminiHTMLAdapter(ContentAdapter):
                 if src:
                     result.extend(self.img(alt, src))
                 else:
-                    print("Warning: image tag with no src")
+                    print(strings.WARNING_IMG_NO_SRC)
 
             elif node.name in ["a"]:
                 href = node.get("href", "")
                 if href:
                     result.extend(self.href(node.get_text(), href))
                 else:
-                    print("Warning: anchor tag with no href")
+                    print(strings.WARNING_ANCHOR_NO_HREF)
                     for child in node.contents:
                         result.extend(self.__process_tags(child))
 
@@ -270,19 +271,19 @@ class GeminiHTMLAdapter(ContentAdapter):
 
                     rows = child.find_all("tr")
                     if not rows:
-                        print("Warning: table with no rows")
+                        print(strings.WARNING_TABLE_NO_ROWS)
                         return result
 
                     column_numbers = len(rows[0].find_all("td"))
 
                     if column_numbers == 0:
-                        print("Warning: table with no columns")
+                        print(strings.WARNING_TABLE_NO_COLUMNS)
                         return result
 
                     for r in rows:
                         cols = r.find_all(["td"])
                         if len(cols) != column_numbers:
-                            print("Warning: inconsistent number of columns in table")
+                            print(strings.WARNING_TABLE_INCONSISTENT_COLUMNS)
                             return result
                         texts = [c.get_text() for c in cols]
                         table_rows.append(texts)
@@ -348,7 +349,7 @@ class GeminiHTMLAdapter(ContentAdapter):
                 for child in node.contents:
                     result.extend(self.__process_tags(child))
         else:
-            print(f"Warning: unhandled node type {type(node)}")
+            print(strings.WARNING_UNHANDLED_NODE_TYPE.format(arg0=type(node)))
 
         return result
 

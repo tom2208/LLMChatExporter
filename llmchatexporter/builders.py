@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from nodes import NodeType, Attributes
 from styles import SimpleMarkdownStyle
+import strings
 
 
 class TokenBuilder(ABC):
@@ -261,17 +262,17 @@ class MarkdownBuilder(TokenBuilder):
             self.__append(self.break_line)
             rows = attributes.rows
             if not rows or not all(isinstance(row, list) for row in rows):
-                print("Warning: Invalid table attributes")
+                print(strings.WARNING_INVALID_TABLE_ATTRIBUTES)
                 return
 
             for row in rows:
                 if not row or not all(isinstance(cell, str) for cell in row):
-                    print("Warning: Invalid table row")
+                    print(strings.WARNING_TABLE_NO_ROWS)
                     return
 
             column_numbers = len(rows[0])
             if column_numbers == 0:
-                print("Warning: Table with no columns")
+                print(strings.WARNING_TABLE_NO_COLUMNS)
                 return
 
             self.__append("| " + " | ".join(rows[0]) + " |\n")
@@ -285,7 +286,7 @@ class MarkdownBuilder(TokenBuilder):
             link = attributes.link
             text = attributes.text
             if not link:
-                print("Warning: HREF token with empty href")
+                print(strings.WARNING_ANCHOR_NO_HREF)
                 return
             self.__append(f"[{text}]({link})")
 
@@ -319,14 +320,16 @@ class MarkdownBuilder(TokenBuilder):
                 else:
                     self.__append(self.list_item)
             else:
-                print("Warning: LIST_ITEM token outside of a list context")
+                print(strings.WARNING_LIST_ITEM_OUTSIDE_LIST)
 
         elif token_type in self.ignored_token_types:
             pass
 
         else:
             print(
-                f"Warning: Unhandled token type {token_type} with attributes {attributes}"
+                strings.WARNING_UNHANDLED_TOKEN_TYPE.format(
+                    arg0=token_type, arg1=attributes
+                )
             )
 
     def build(self):
