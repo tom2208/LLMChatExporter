@@ -6,24 +6,97 @@ from typing import Optional, List
 
 
 class ContentAdapter(ABC):
-    """Abstract adapter: normalize node operations for different sources."""
+    """
+    Abstract base class for adapter objects that convert raw input data into a
+    normalized, structured representation used by the application.
+    Implementations must override the extract_content method to perform any
+    parsing, validation, or transformation required to turn provider-specific
+    or raw payloads into a common content format.
+    Methods:
+        extract_content(raw_data):
+            Parse and convert the given raw_data into the adapter's canonical
+            content representation.
+    Parameters for extract_content:
+        raw_data (Any): The raw input from which content should be extracted.
+            Typical types include str, bytes, dict, list, or provider-specific
+            objects. Concrete adapters should document accepted input types.
+    Returns:
+        Any: A normalized content object (commonly a dict, list, or plain string)
+        that downstream code can consume consistently. The exact shape should be
+        documented by each concrete adapter.
+    Raises:
+        ValueError: If raw_data is invalid or missing required information.
+        TypeError: If raw_data has an unsupported type.
+        AdapterError or other adapter-specific exceptions as appropriate.
+    Subclass responsibilities:
+        - Implement extract_content and ensure it is deterministic and well-tested.
+        - Validate and sanitize input as necessary.
+        - Document the exact output format and any assumptions about raw_data.
+    Example:
+        class JsonContentAdapter(ContentAdapter):
+                # raw_data is expected to be a JSON string or dict
+                ...
+    Note:
+        This class is intended to define the contract for content extraction only;
+        it does not prescribe a particular output schema. Consumers should rely on
+        concrete adapter documentation for schema details.
+    """
 
     @abstractmethod
     def extract_content(self, raw_data):
+        """
+        Extract and normalize textual content from a raw data payload into a consistent internal representation.
+        This method accepts a variety of input shapes commonly produced by chat logs, API responses, or export files
+        and converts them into a normalized sequence of message dictionaries suitable for downstream processing.
+        Parameters:
+        - raw_data (Any): The incoming raw payload to extract content from. Expected types include str, bytes,
+          dict, list, tuple, or JSON-encoded str. Custom objects implementing a mapping-like interface are also supported.
+        Returns:
+        - "content" (list[(NodeType, Attributes)]): a list of tuples representing certain text elements
+        Raises:
+        - TypeError: if raw_data is of an unsupported type and cannot be coerced to a known representation.
+        - ValueError: if parsing (e.g. JSON decoding) fails or the structure is malformed and cannot be normalized.
+        """
+
         pass
 
 
-class HTMLAdapter(ContentAdapter):
+class GeminiHTMLAdapter(ContentAdapter):
     """
-    HTMLAdapter is a subclass of ContentAdapter designed to extract structured content from raw HTML data.
-    It uses BeautifulSoup with the 'lxml' parser to locate and process specific HTML elements representing queries and answers.
-    The main method, extract_content, parses the HTML and returns a list of tuples, each containing a node type and optional attributes,
-    to represent the start of queries and answers in the content.
-    Methods:
-        extract_content(raw_data: str) -> List[tuple[NodeType, Optional[Attributes]]]:
-            Parses the input HTML string and extracts query and answer nodes.
-            Ensures the number of queries and answers are consistent.
-            Returns a list of tuples indicating the start of each query and answer.
+    GeminiHTMLAdapter
+
+    Adapter that parses Gemini-chat-style HTML (as produced by the
+    Gemini model frontend) into a flat, ordered sequence of internal node tuples
+    of the form (NodeType, Optional[Attributes]). The adapter is intended to be
+    used by the surrounding LLMChatExporter system to convert rich HTML responses
+    into a canonical intermediate representation.
+
+    Behavior summary
+    - Uses BeautifulSoup with the "lxml" parser to parse input HTML.
+    - Selects answer blocks using CSS selector:
+        and query text blocks using:
+            "div.query-text.gds-body-l"
+        The code asserts that the number of answers equals number of queries or that
+        there is one fewer answer than queries.
+    - Produces node tuples for text, formatting (bold/italic), paragraphs, headings,
+        lists, tables, images, links, code blocks, horizontal lines, and other block
+        constructs supported in the input.
+    - Emits warnings (printed to stdout) for potentially malformed or incomplete
+        tags (e.g., images without src, anchors without href, empty tables, etc.).
+    - Skips div elements whose classes match entries in div_class_blacklist
+        (defaults to ["table-footer"]).
+
+    Notes and caveats
+    - This adapter depends on external types and factories: NodeType, nodes.*
+        (TextAttributes, ImageAttributes, HrefAttributes, HeadingAttributes,
+        TableAttributes, CodeBlockAttributes, OrderedListAttributes, etc.). It
+        assumes those types are available in the import context.
+    - The code contains an assertion about matching numbers of queries and answers;
+        callers that feed non-conforming HTML will receive an AssertionError.
+    - The adapter aims to be tolerant of common HTML constructs produced by the
+        Gemini UI but is not a full HTML serializer — unrecognized tags are simply
+        traversed and their children processed, and some structural assumptions are
+        made (e.g., single <code> in a code-block).
     """
 
     def __init__(self):

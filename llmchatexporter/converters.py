@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 from builders import MarkdownBuilder
-from adapters import HTMLAdapter
+from adapters import GeminiHTMLAdapter
 
 
 class BaseConverter(ABC):
@@ -112,7 +112,7 @@ class GeminiHTMLToMarkdownConverter(BaseConverter):
         with open(input_path, "r", encoding="utf-8") as file:
 
             html_content = file.read()
-            adapter = HTMLAdapter()
+            adapter = GeminiHTMLAdapter()
             content = adapter.extract_content(html_content)
             builder = MarkdownBuilder()
 

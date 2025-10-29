@@ -4,6 +4,13 @@ from abc import ABC, abstractmethod
 
 
 class NodeType(Enum):
+    """
+    Represents kinds of nodes used to model structure and inline formatting of
+    exported chat content. Members correspond to structural blocks, inline
+    formatting markers, or semantic delimiters used when converting between a
+    document model and serialized formats (e.g., Markdown, HTML).
+    """
+
     TEXT = auto()
     START_PARAGRAPH = auto()
     END_PARAGRAPH = auto()

@@ -11,6 +11,7 @@ class TokenBuilder(ABC):
     contract; concrete subclasses determine the concrete token representation
     (e.g. strings, tuples, Token objects) and any formatting, validation or
     coalescing rules.
+
     Methods
     - push(token_type: NodeType, attributes: Attributes = None)
         Add a token of the given node type and optional attributes to the current
@@ -27,6 +28,7 @@ class TokenBuilder(ABC):
         Clear any internal state so the builder can begin a new, empty token
         sequence. After reset(), a subsequent build() should represent an empty
         output (unless the subclass documents otherwise).
+
     Behavioral notes
     - Subclasses are responsible for documenting the exact token types, attribute
       schema, return type of build(), and any validation rules or exceptions.
@@ -34,8 +36,9 @@ class TokenBuilder(ABC):
       synchronize access to a builder instance if it may be used concurrently.
     - Implementations may choose whether build() consumes or preserves the
       accumulated state; callers should consult the concrete subclass API.
+
     Example (conceptual)
-        # subclass defines concrete token representation and semantics
+        \# subclass defines concrete token representation and semantics
         b = MyTokenBuilder()
         b.push(NodeType.TEXT, TextAttribute(text="hello"))
         b.push(NodeType.BREAK, None)
@@ -52,6 +55,7 @@ class TokenBuilder(ABC):
         attributes, updates the builder's internal parent/child relationships and stack,
         and sets the newly created node as the current active node for subsequent
         operations.
+
         Parameters
         ----------
         token_type : NodeType
@@ -62,10 +66,12 @@ class TokenBuilder(ABC):
             of Attributes depends on the builder implementation (commonly a dict-like
             mapping). If None, the node is created with no attributes or with default
             attributes.
+
         Returns
         -------
         None
             The method modifies the builder state in-place and does not return a value.
+
         Behavior and side effects
         -------------------------
         - A new node object is instantiated using token_type and attributes.
@@ -75,6 +81,7 @@ class TokenBuilder(ABC):
           immediately closed (popped) according to the builder's rules.
         - The builder may normalize or validate attributes before attaching them.
         - The builder updates any position, depth, or context tracking structures.
+
         Exceptions
         ----------
         TypeError
@@ -85,9 +92,10 @@ class TokenBuilder(ABC):
         RuntimeError
             If the internal stack is in an inconsistent state and the operation cannot
             be completed.
+
         Examples
         --------
-        # Typical usage (illustrative; actual APIs may differ):
+        \# Typical usage (illustrative; actual APIs may differ):
         builder.push(NodeType.ELEMENT, ElementAttribute())
         builder.push(NodeType.BREAK, None)
         builder.push(NodeType.TEXT, TextAttribute(text="Hello World"))
@@ -121,7 +129,7 @@ class TokenBuilder(ABC):
         """Reset builder to a clean initial state.
 
         Clear in-memory buffers, counters, and temporary resources so the instance
-        can be reused. Does not save partial work..
+        can be reused. Does not save partial work.
         """
         pass
 
@@ -138,6 +146,7 @@ class MarkdownBuilder(TokenBuilder):
     ordered/unordered lists. The builder relies on a configurable style object
     (for line prefixes and preambles) and an internal stack to track list
     nesting and numbering.
+
     Key attributes
     --------------
     text : str
