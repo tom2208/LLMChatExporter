@@ -282,17 +282,3 @@ class HTMLAdapter(ContentAdapter):
 
     def __generate_break(self) -> tuple[NodeType, Optional[Attributes]]:
         return (NodeType.BREAK, None)
-
-
-from builders import MarkdownBuilder
-
-with open("./tar/Google Gemini.html", "r", encoding="utf-8") as f:
-    html = f.read()
-    adapter = HTMLAdapter()
-    content = adapter.extract_content(html)
-    builder = MarkdownBuilder()
-    for c in content:
-        builder.push(c[0], c[1])
-
-    with open("./tar/chat.md", "w", encoding="utf-8") as f:
-        f.write(builder.build())
